@@ -9,8 +9,7 @@ ratBot's commands are invoked by using the command prefix which is an exclamatio
 ratBot uses a database to record data in tables and is currently configured for MySQL 8.0.
 
 1. Create a database connecction with bot
-2. [Join the bot to your discord server]
-(https://discord.com/api/oauth2/authorize?client_id=986455489070108752&permissions=8&scope=bot)  
+2. [Join the bot to your discord server]( https://discord.com/api/oauth2/authorize?client_id=986455489070108752&permissions=8&scope=bot )  
 
 At this point you are ready to go, use !help command to learn more about ratBot's commands.
 
@@ -21,6 +20,8 @@ The master branch is the latest working copy of the project. It should be consid
 ## First Time Setup
 
 `virtualenv venv && source env/bin/activate && pip install -r requirements.txt`
+
+Runs on python version: 3.8.10
 
 ## Returning to an existing project
 
