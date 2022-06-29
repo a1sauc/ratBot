@@ -1,22 +1,22 @@
 # ratBot.py
-# Uses MySQL to record teamkills from players of Escape From Tarkov. 
-# It is genereic and can be tweaked to whichever game needed by changing database traits. 
+# Uses MySQL to record teamkills from players of Escape From Tarkov.
+# It is genereic and can be tweaked to whichever game needed by changing database traits.
 # author@ josh Priest
 # github@ a1sauc
 import os
 import random
 from typing import List
-import discord 
+import discord
 from dotenv import load_dotenv
 from mysql.connector import connect, Error
 from discord.ext import commands
 
 load_dotenv()
 TOKEN = os.getenv("RATBOT_DISCORD_TOKEN")
-userName = os.getenv("DB_USERNAME")
-pw = os.getenv("DB_PW")
-dbName = os.getenv("DB_NAME")
-dbHost = os.getenv("DB_HOST")
+userName = os.getenv("RATBOT_DB_USERNAME")
+pw = os.getenv("RATBOT_DB_PW")
+dbName = os.getenv("RATBOT_DB_NAME")
+dbHost = os.getenv("RATBOT_DB_HOST")
 intents = discord.Intents.default()
 intents.members=True
 bot = commands.Bot(command_prefix="!",help_command=None, intents=intents)
