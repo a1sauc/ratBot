@@ -43,9 +43,10 @@ CREATE TABLE IF NOT EXISTS teamkills (
 )
 """
 
-global db
 global db_cursor
-
+global db
+ 
+# Perhaps try fixing issue by removing the try except block
 print("Trying to connect to db server...")
 try:
     db = connect(
@@ -65,6 +66,8 @@ except Error as e:
 
 # helper function to get player count
 def getCount():
+    global db_cursor
+    global db
     cnt_qry = """
     SELECT COUNT(*) FROM players
     """
@@ -128,6 +131,8 @@ async def getGuilds(ctx):
 # Output: client side
 @bot.command()
 async def addPlayer(ctx, *args):
+    global db_cursor
+    global db
     if args.__len__() == 0 or args.__len__() > 1:
         await ctx.send("```Input Error! Correct format = !newPlayer <playerName>```")
 
@@ -158,6 +163,8 @@ async def addPlayer(ctx, *args):
 # Output: client side 
 @bot.command()
 async def getPlayer(ctx, *args):
+    global db_cursor
+    global db
     if len(args) < 1 or len(args) > 1:
         await ctx.send('```Input Error! Correct format: !getPlayer <playerName>```')
     else: 
@@ -184,6 +191,8 @@ async def getPlayer(ctx, *args):
 # Output: client side
 @bot.command()
 async def addKill(ctx, *args):
+    global db_cursor
+    global db
     if len(args) != 2 and len(args) != 4:
         await ctx.send('```Input Error! Map and weapon are optional but both are required if used.\n Correct format: !addKill <killer> <victim> <map> <weapon>```')
     else:
@@ -281,6 +290,8 @@ async def addKill(ctx, *args):
 # Output: client side
 @bot.command()
 async def deleteKill(ctx, *args):
+    global db_cursor
+    global db
     if len(args) == 0:
         await ctx.send('```Input error! Please enter a kill Id # to delete. Correct format: !deleteKill <Id>```')
     elif len(args) > 1:
@@ -343,6 +354,8 @@ async def deleteKill(ctx, *args):
 # Output: client side
 @bot.command()
 async def deletePlayer(ctx, *args):
+    global db_cursor
+    global db
     if len(args) == 0:
         await ctx.send('```Input error! Please enter a name. Correct format: !deletePlayer <playerName>```')
     elif len(args) > 1:
@@ -370,6 +383,8 @@ async def deletePlayer(ctx, *args):
 # Output: client side
 @bot.command()
 async def showKills(ctx):
+    global db_cursor
+    global db
     qry = """
     SELECT * FROM teamkills
     """
@@ -397,6 +412,8 @@ async def showKills(ctx):
 # Output: client side
 @bot.command()
 async def showPlayers(ctx):
+    global db_cursor
+    global db
     qry = """
     SELECT * FROM players
     """
@@ -449,6 +466,8 @@ async def help(ctx, *args):
 # Output: client side
 @bot.command()
 async def leaderboard(ctx):
+    global db_cursor
+    global db
     print('leaderboard')
     sql = "SELECT * FROM players ORDER BY num_teamkills DESC"
     db_cursor.execute(sql)
