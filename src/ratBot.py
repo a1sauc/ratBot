@@ -492,12 +492,12 @@ db_cursor.execute("DESCRIBE players")
 results = db_cursor.fetchall()
 for row in results:
     print(row)
-
+'''
 
 # Testing purposes - Delete both tables in rat_stats database
 # Output: server side
 @bot.command()
-async def delete(ctx):
+async def deleteTables(ctx):
     qry = "drop table players"
     db_cursor.execute(qry)
     qry = "drop table teamkills"
@@ -507,6 +507,6 @@ async def delete(ctx):
     db.close()
     print('Delete sucessful!')
     exit(0)
-'''
+
 
 bot.run(TOKEN)
