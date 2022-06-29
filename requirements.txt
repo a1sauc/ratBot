@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-discord.py==1.7.3
-mysql-connector-python==8.0.29
-python-dotenv==0.20.0
-=======
 asyncio==3.4.3
 discord.py==1.7.3
 mysql-connector-python==8.0.29
 python-dotenv==0.20.0
->>>>>>> c3c015968e20b2952e31fd5303ea6f8633ba803c
