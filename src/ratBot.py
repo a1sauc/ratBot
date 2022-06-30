@@ -3,13 +3,32 @@
 # It is genereic and can be tweaked to whichever game needed by changing database traits.
 # author@ josh Priest
 # github@ a1sauc
+from datetime import datetime
 import os
+import logging as log
 import random
 from typing import List
 import discord
 from dotenv import load_dotenv
 from mysql.connector import connect, Error
 from discord.ext import commands
+
+
+try:
+    logfile = os.environ.get('RATBOT.log', '/var/log/ratbot.log')
+    logformat = os.environ.get('RATBOT_LOG_FORMAT', '%(asctime)s %(user)-8s %(message)s')
+    log.basicConfig(filename=logfile,format=logformat)
+except Exception as e:
+    log.basicConfig(filename='RATBOT.log', level=log.DEBUG)
+    log.error(e)
+    print(e)
+
+log.getLogger('discord').setLevel(log.ERROR)
+log.getLogger('discord.client').setLevel(log.ERROR)
+log.getLogger('discord.gateway').setLevel(log.ERROR)
+log.getLogger('src').setLevel(log.ERROR)
+log.getLogger('venv').setLevel(log.ERROR)
+
 
 load_dotenv()
 TOKEN = os.getenv("RATBOT_DISCORD_TOKEN")
@@ -45,7 +64,8 @@ CREATE TABLE IF NOT EXISTS teamkills (
 
 global db_cursor
 global db
- 
+
+
 # Perhaps try fixing issue by removing the try except block
 print("Trying to connect to db server...")
 try:
@@ -56,12 +76,19 @@ try:
         database=dbName
     )
     db_cursor = db.cursor(buffered=True)
+    log.info(f"Object type of db = {type(db)}")
+    log.info(f"Object type of db_cursor = {type(db_cursor)}")
+
+    print(f"Object type of db = {type(db)}")
+    print(f"Object type of db_cursor = {type(db_cursor)}")
     db_cursor.execute(create_player_table)
     db_cursor.execute(create_teamkill_table)
     db.commit()
     print('Successful Database connection!')
 except Error as e:
+    log.critical("Error with database connection.")
     print(e)
+
 
 
 # helper function to get player count
@@ -72,8 +99,9 @@ def getCount():
     SELECT COUNT(*) FROM players
     """
     results = db_cursor.execute(cnt_qry)
-    x = len(results)
-    return x
+    #x = len(results)
+    x = db_cursor.fetchall()
+    return len(x)
     
 
 # helper function to generate a random 5-digit ID # for an inserted kill
@@ -103,6 +131,9 @@ def findFunc(x):
 @bot.event
 async def on_ready():
     print(f'\n{bot.user.name} has connected to discord!')
+    now = datetime.now()
+    time = now.strftime("%H:%M:%S")
+    print("time:", time)
     pass
 
 
@@ -153,7 +184,10 @@ async def addPlayer(ctx, *args):
             val = (newPlayer, 0, 0)
             db_cursor.execute(qry, val)
             db.commit()
-            await ctx.send("```Successful insert. {} was added to the list```".format(newPlayer))
+            if db_cursor.rowcount > 1:
+                await ctx.send("```Successful insert. {} was added to the list```".format(newPlayer))    
+            else:
+                log.error("error when adding newPlayer")
         else:
             await ctx.send('```There are already records under that name, Insert new name```')
 
@@ -229,6 +263,8 @@ async def addKill(ctx, *args):
             UPDATE players SET num_teamkills = %s WHERE name = %s 
             """
             db_cursor.execute(updateKiller, (kills, killer))
+            if db_cursor.rowcount < 1:
+                log.error("Error while incrementing killer's teamkills")
             
             deaths = victimResults[0][0]
             deaths += 1
@@ -236,6 +272,8 @@ async def addKill(ctx, *args):
             UPDATE players SET num_victim = %s WHERE name = %s
             """
             db_cursor.execute(updateVictim, (deaths, victim))
+            if db_cursor.rowcount < 1:
+                log.error("Error while incrementing victim's deaths")
             db.commit()
 
             # Update teamkills table with confirmed kill
@@ -253,20 +291,26 @@ async def addKill(ctx, *args):
             cntQry = """
             SELECT COUNT(*) FROM teamkills
             """
-            ans = db_cursor.execute(cntQry)
-            if ans != None:
+            db_cursor.execute(cntQry)
+            ans = db_cursor.fetchall()
+            if len(ans) > 1:
                 
                 idQry = """
                 SELECT * FROM teamkills WHERE id = %s
                 """
-                res = db_cursor.execute(idQry,(id,))
-                
+                db_cursor.execute(idQry,(id,))
+                res = db_cursor.fetchall()
                 if len(res) > 0:
                     # ID is in list so regenerate ID
                     id = genID()
-                    while len(db_cursor.execute(idQry,(id,))) > 0:
+                    db_cursor.execute(idQry,(id,))
+                    result = db_cursor.fetchall()
+                    while len(result) > 0:
                         id = genID()
                         # newly generated ID
+                        db_cursor.execute(idQry,(id,))
+                        result = db_cursor.fetchall()
+
             
 
             killQry = """
@@ -274,6 +318,8 @@ async def addKill(ctx, *args):
             """
             val = (id, date, killer, victim, map, weapon)
             db_cursor.execute(killQry,val)
+            if db_cursor.rowcount < 1:
+                log.error("Error while adding kill to table teamkill")
             db.commit()
             await ctx.send('Kill was added to the records.')
         else:
@@ -365,7 +411,9 @@ async def deletePlayer(ctx, *args):
         srchQry = """
         SELECT * FROM players WHERE name = %s
         """
-        res = db_cursor.execute(srchQry,(delPlayer,))
+        db_cursor.execute(srchQry,(delPlayer,))
+        res = db_cursor.fetchall()
+
         if len(res) < 1:
             await ctx.send('```Input error! {} was not in the database```'.format(delPlayer))
         else:

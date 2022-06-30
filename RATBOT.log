@@ -1,0 +1,4 @@
+ERROR:root:[Errno 13] Permission denied: '/var/log/ratbot.log'
+DEBUG:asyncio:Using selector: EpollSelector
+INFO:root:Object type of db = <class 'mysql.connector.connection_cext.CMySQLConnection'>
+INFO:root:Object type of db_cursor = <class 'mysql.connector.cursor_cext.CMySQLCursorBuffered'>
