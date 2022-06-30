@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import logging as log
 import random
+from time import time
 from typing import List
 import discord
 from dotenv import load_dotenv
@@ -20,7 +21,7 @@ try:
     log.basicConfig(filename=logfile,format=logformat)
 except Exception as e:
     log.basicConfig(filename='RATBOT.log', level=log.DEBUG)
-    log.error(e)
+    log.error(f"time = {datetime.now()} \n error = {e}")
     print(e)
 
 log.getLogger('discord').setLevel(log.ERROR)
