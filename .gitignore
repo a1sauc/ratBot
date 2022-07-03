@@ -2,4 +2,7 @@ src/.env
 venv/*
 .vscode/
 
-.log
+*.log
+logs/**
+
+data/**
