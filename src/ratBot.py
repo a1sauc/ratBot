@@ -39,6 +39,8 @@ dbName = os.getenv("RATBOT_DB_NAME")
 dbHost = os.getenv("RATBOT_DB_HOST")
 intents = discord.Intents.default()
 intents.members=True
+#testing messages - delete line below later
+intents.messages=True
 bot = commands.Bot(command_prefix="$",help_command=None, intents=intents)
 
 random.seed(a=None,version=2)
@@ -128,13 +130,13 @@ def genID():
 # helper function for help command. Returns y as default if x is not found.
 def findFunc(x):
     return {
-        'addPlayer':"[Command]\n\tCorrect format: $addPlayer <playerName>\n\tAdds a new player to the records. Can only add one player at a time.\n",
-        'getPlayer':"[Command]\n\tCorrect format: $getPlayer <playerName>\n\tGets a player's statistics Can only get one player at a time.\n",
-        'deletePlayer':"[Command]\n\tCorrect format: $deletePlayer <playerName>\n\tDeletes a player from the records. Can only delete one player at a time.\n",
-        'addKill':"[Command]\n\tCorrect format: $addKill <killer> <victim> <map> <weapon>\n\tMap and weapon are optional but both are required if used.\n",
-        'deleteKill':"[Command]\n\tCorrect format: $deleteKill <Id>\n\tDeletes a kill from the records. Id is a unique 5-digit number.\n",
-        'showKills':"[Command]\n\tCorrect format: $showKills\n\tShows all the kills from the records\n",
-        'showPlayers':"[Command]\n\tCorrect format: $showPlayers\n\tShows all the players and their statistics\n",
+        'addplayer':"[Command]\n\tCorrect format: $addplayer <playerName>\n\tAdds a new player to the records. Can only add one player at a time.\n",
+        'getplayer':"[Command]\n\tCorrect format: $getplayer <playerName>\n\tGets a player's statistics Can only get one player at a time.\n",
+        'deleteplayer':"[Command]\n\tCorrect format: $deleteplayer <Name>\n\tDeletes a player from the records. Can only delete one player at a time.\n",
+        'addkill':"[Command]\n\tCorrect format: $addkill <killer> <victim> <map> <weapon>\n\tMap and weapon are optional but both are required if used.\n",
+        'deletekill':"[Command]\n\tCorrect format: $deletekill <Id>\n\tDeletes a kill from the records. Id is a unique 5-digit number.\n",
+        'showkills':"[Command]\n\tCorrect format: $showkills\n\tShows all the kills from the records\n",
+        'showplayers':"[Command]\n\tCorrect format: $showplayers\n\tShows all the players and their statistics\n",
         'leaderboard':"[Command]\n\tCorrect format: $leaderboard\m\tRanks the players by most team kills\n",
         'help':"[Command]\n\tCorrect format: $help <command>\n\tShows the help screen message. Command is optional but will provide more detail if included.\n",
         'y':"Error! The inputted command is not in the list.\n"
@@ -150,6 +152,11 @@ async def on_ready():
     print("time:", time)
     pass
 
+@bot.event
+async def on_command_error(ctx, error):
+  if isinstance(error, commands.CommandNotFound):
+    # Replace MissingRequiredArguments with your error
+    await ctx.send("Input Error! {}.".format(error.args[0]))
 
 # Prints guilds & members of each guild that ratBot is connected to (owner use)
 # Output: server side
@@ -175,10 +182,10 @@ async def getGuilds(ctx):
 # adds a new player to the database
 # Output: client side
 @bot.command()
-async def addPlayer(ctx, *args):
+async def addplayer(ctx, *args):
     
     if args.__len__() == 0 or args.__len__() > 1:
-        await ctx.send("```Input Error! Correct format = $newPlayer <playerName>```")
+        await ctx.send("```Input Error! Correct format = $addplayer <name>```")
 
     else:
         
@@ -204,14 +211,14 @@ async def addPlayer(ctx, *args):
             await ctx.send('```There are already records under that name, Insert new name```')
 
 
-# format: $getPlayer <playerName>
+# format: $getplayer <Name>
 # Gets a players' stats from table players
 # Output: client side 
 @bot.command()
-async def getPlayer(ctx, *args):
+async def getplayer(ctx, *args):
     
     if len(args) < 1 or len(args) > 1:
-        await ctx.send('```Input Error! Correct format: $getPlayer <playerName>```')
+        await ctx.send('```Input Error! Correct format: $getplayer <playerName>```')
     else: 
         playerName = args[0]
         qry = """SELECT * FROM players WHERE name = %s"""
@@ -230,15 +237,15 @@ async def getPlayer(ctx, *args):
             await ctx.send("```Player is not in the records. Try again with a new name```")
 
 
-# format: $addKill <killer> <victim> <map> <weapon>
+# format: $addkill <killer> <victim> <map> <weapon>
 # IF no map and weapon, fill in with N/A
 # increment killer & victim's stats in players table & add kill to teamkills table
 # Output: client side
 @bot.command()
-async def addKill(ctx, *args):
+async def addkill(ctx, *args):
     
     if len(args) != 2 and len(args) != 4:
-        await ctx.send('```Input Error! Map and weapon are optional but both are required if used.\n Correct format: $addKill <killer> <victim> <map> <weapon>```')
+        await ctx.send('```Input Error! Map and weapon are optional but both are required if used.\n Correct format: $addkill <killer> <victim> <map> <weapon>```')
     else:
         # map & weapon are included
         if len(args) > 2:
@@ -331,7 +338,7 @@ async def addKill(ctx, *args):
             if db_cursor.rowcount < 1:
                 log.error("Error while adding kill to table teamkill")
             db.commit()
-            await ctx.send('Kill was added to the records.')
+            await ctx.send('```Kill was added to the records.```')
         else:
             #killer or victim is not in database
             if len(killerResults) < 1 and len(victimResults) < 1:
@@ -342,15 +349,15 @@ async def addKill(ctx, *args):
                 await ctx.send('```{} is not in the records. Try again.```'.format(killer))       
         pass
 
-# format: $deleteKill <Id>
+# format: $deletekill <Id>
 # Output: client side
 @bot.command()
-async def deleteKill(ctx, *args):
+async def deletekill(ctx, *args):
     
     if len(args) == 0:
-        await ctx.send('```Input error! Please enter a kill Id # to delete. Correct format: $deleteKill <Id>```')
+        await ctx.send('```Input error! Please enter a kill Id # to delete. Correct format: $deletekill <Id>```')
     elif len(args) > 1:
-        await ctx.send('```Input error! Can only delete 1 kill at a time. Correct format: $deleteKill <Id>```')
+        await ctx.send('```Input error! Can only delete 1 kill at a time. Correct format: $deletekill <Id>```')
     else:
         delID = str(args[0])
         srchQry = """
@@ -404,14 +411,14 @@ async def deleteKill(ctx, *args):
     pass
 
 
-# format: $deletePlayer
+# format: $deleteplayer
 # note in help command that can only delete 1 player 
 # Output: client side
 @bot.command()
-async def deletePlayer(ctx, *args):
+async def deleteplayer(ctx, *args):
     
     if len(args) == 0:
-        await ctx.send('```Input error! Please enter a name. Correct format: $deletePlayer <playerName>```')
+        await ctx.send('```Input error! Please enter a name. Correct format: $deleteplayer <Name>```')
     elif len(args) > 1:
         await ctx.send('```Input error! Can only delete one player at a time```')
     else:
@@ -434,11 +441,11 @@ async def deletePlayer(ctx, *args):
     pass
 
 
-# format: $showKills
+# format: $showkills
 # Grabs all data from teamkills Table & outputs to discord
 # Output: client side
 @bot.command()
-async def showKills(ctx):
+async def showkills(ctx):
     
     qry = """
     SELECT * FROM teamkills
@@ -462,11 +469,11 @@ async def showKills(ctx):
     await ctx.send(s)
 
     
-# format: $showPlayers
+# format: $showplayers
 # Grabs all data from players Table & outputs to discord
 # Output: client side
 @bot.command()
-async def showPlayers(ctx):
+async def showplayers(ctx):
     
     qry = """
     SELECT * FROM players
@@ -493,13 +500,13 @@ async def help(ctx, *args):
 
     if len(args) < 1:
         s = """```Commands:
-        addPlayer       - adds a new player to the records
-        getPlayer       - gets a player's statistics
-        deletePlayer    - deletes a player from the records
-        addKill         - adds a kill to the records
-        deleteKill      - deletes a kill from the records
-        showKills       - shows all the kills
-        showPlayers     - shows all the players & their statistics
+        addplayer       - adds a new player to the records
+        getplayer       - gets a player's statistics
+        deleteplayer    - deletes a player from the records
+        addkill         - adds a kill to the records
+        deletekill      - deletes a kill from the records
+        showkills       - shows all the kills
+        showplayers     - shows all the players & their statistics
         leaderboard     - ranks the players by most team kills
         help            - show this message
 
