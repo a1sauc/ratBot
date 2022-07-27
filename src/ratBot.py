@@ -7,8 +7,6 @@ from datetime import datetime
 import os
 import logging as log
 import random
-from time import time
-from typing import List
 import discord
 from dotenv import load_dotenv
 from mysql.connector import connect, Error
@@ -39,9 +37,8 @@ dbName = os.getenv("RATBOT_DB_NAME")
 dbHost = os.getenv("RATBOT_DB_HOST")
 intents = discord.Intents.default()
 intents.members=True
-#testing messages - delete line below later
 intents.messages=True
-bot = commands.Bot(command_prefix="$",help_command=None, intents=intents)
+bot = commands.Bot(command_prefix="$",help_command=None, intents=intents, case_insensitive=True)
 
 random.seed(a=None,version=2)
 
@@ -78,11 +75,6 @@ try:
         database=dbName
     )
     db_cursor = db.cursor(buffered=True)
-    log.info(f"Object type of db = {type(db)}")
-    log.info(f"Object type of db_cursor = {type(db_cursor)}")
-
-    print(f"Object type of db = {type(db)}")
-    print(f"Object type of db_cursor = {type(db_cursor)}")
     db_cursor.execute(create_player_table)
     db_cursor.execute(create_teamkill_table)
     db.commit()
@@ -102,22 +94,6 @@ def getCount():
     #x = len(results)
     x = db_cursor.fetchall()
     return len(x)
-    
-
-# helper function to reconnect to database & create new cursor
-def reconnection():
-    try:
-        db = connect(
-            host=dbHost,
-            user=userName,
-            password=pw,
-            database=dbName
-        )
-        db_cursor = db.cursor(buffered=True)
-    except Error as e:
-        log.error(e)
-        # print to servers bot is going offline for maintenance
-        #add system exit to kill bot 
 
 
 # helper function to generate a random 5-digit ID # for an inserted kill
@@ -130,15 +106,15 @@ def genID():
 # helper function for help command. Returns y as default if x is not found.
 def findFunc(x):
     return {
-        'addplayer':"[Command]\n\tCorrect format: $addplayer <playerName>\n\tAdds a new player to the records. Can only add one player at a time.\n",
-        'getplayer':"[Command]\n\tCorrect format: $getplayer <playerName>\n\tGets a player's statistics Can only get one player at a time.\n",
-        'deleteplayer':"[Command]\n\tCorrect format: $deleteplayer <Name>\n\tDeletes a player from the records. Can only delete one player at a time.\n",
-        'addkill':"[Command]\n\tCorrect format: $addkill <killer> <victim> <map> <weapon>\n\tMap and weapon are optional but both are required if used.\n",
-        'deletekill':"[Command]\n\tCorrect format: $deletekill <Id>\n\tDeletes a kill from the records. Id is a unique 5-digit number.\n",
-        'showkills':"[Command]\n\tCorrect format: $showkills\n\tShows all the kills from the records\n",
-        'showplayers':"[Command]\n\tCorrect format: $showplayers\n\tShows all the players and their statistics\n",
-        'leaderboard':"[Command]\n\tCorrect format: $leaderboard\m\tRanks the players by most team kills\n",
-        'help':"[Command]\n\tCorrect format: $help <command>\n\tShows the help screen message. Command is optional but will provide more detail if included.\n",
+        'addplayer':"[Command]\n\tCorrect format: $addplayer playerName\n\tAdds a new player to the records. Can only add one player at a time.\nAliases: ap",
+        'getplayer':"[Command]\n\tCorrect format: $getplayer playerName\n\tGets a player's statistics Can only get one player at a time.\nAliases: gpk\n",
+        'deleteplayer':"[Command]\n\tCorrect format: $deleteplayer playerName\n\tDeletes a player from the records. Can only delete one player at a time.\n",
+        'addkill':"[Command]\n\tCorrect format: $addkill killer victim map <weapon>\n\tMap and weapon are optional but both are required if used.\nAliases: ak\n",
+        'deletekill':"[Command]\n\tCorrect format: $deletekill Id\n\tDeletes a kill from the records. Id is a unique 5-digit number.\n",
+        'showkills':"[Command]\n\tCorrect format: $showkills\n\tShows all the kills from the records\nAliases: kills, sk\n",
+        'showplayers':"[Command]\n\tCorrect format: $showplayers\n\tShows all the players and their statistics\nAliases: players, sp\n",
+        'leaderboard':"[Command]\n\tCorrect format: $leaderboard\m\tRanks the players by most team kills\nAliases: lb\n",
+        'help':"[Command]\n\tCorrect format: $help command\n\tShows the help screen message. Command is optional but will provide more detail if included.\n",
         'y':"Error! The inputted command is not in the list.\n"
     }.get(x,'y')
 
@@ -156,11 +132,11 @@ async def on_ready():
 async def on_command_error(ctx, error):
   if isinstance(error, commands.CommandNotFound):
     # Replace MissingRequiredArguments with your error
-    await ctx.send("Input Error! {}.".format(error.args[0]))
+    await ctx.send("```Input Error! {}.```".format(error.args[0]))
 
 # Prints guilds & members of each guild that ratBot is connected to (owner use)
 # Output: server side
-@bot.command()
+@bot.command(name='getGuilds',aliases=['guilds'])
 async def getGuilds(ctx):
     guilds = bot.guilds
     print(f'\nServers I am connected to:')
@@ -178,14 +154,14 @@ async def getGuilds(ctx):
         print('\n')
         
 
-# format: $addPlayer <playerName>
+# format: $addPlayer playerName
 # adds a new player to the database
 # Output: client side
-@bot.command()
+@bot.command(name='addplayer',aliases=['ap'])
 async def addplayer(ctx, *args):
     
     if args.__len__() == 0 or args.__len__() > 1:
-        await ctx.send("```Input Error! Correct format = $addplayer <name>```")
+        await ctx.send("```Input Error! Correct format = $addplayer name```")
 
     else:
         
@@ -211,14 +187,14 @@ async def addplayer(ctx, *args):
             await ctx.send('```There are already records under that name, Insert new name```')
 
 
-# format: $getplayer <Name>
+# format: $getplayer Name
 # Gets a players' stats from table players
 # Output: client side 
-@bot.command()
+@bot.command(name='getplayer',aliases=['gp'])
 async def getplayer(ctx, *args):
     
     if len(args) < 1 or len(args) > 1:
-        await ctx.send('```Input Error! Correct format: $getplayer <playerName>```')
+        await ctx.send('```Input Error! Correct format: $getplayer playerName```')
     else: 
         playerName = args[0]
         qry = """SELECT * FROM players WHERE name = %s"""
@@ -237,15 +213,15 @@ async def getplayer(ctx, *args):
             await ctx.send("```Player is not in the records. Try again with a new name```")
 
 
-# format: $addkill <killer> <victim> <map> <weapon>
+# format: $addkill killer <victim> <map> <weapon>
 # IF no map and weapon, fill in with N/A
 # increment killer & victim's stats in players table & add kill to teamkills table
 # Output: client side
-@bot.command()
+@bot.command(name='addkill', aliases=['ak'])
 async def addkill(ctx, *args):
     
     if len(args) != 2 and len(args) != 4:
-        await ctx.send('```Input Error! Map and weapon are optional but both are required if used.\n Correct format: $addkill <killer> <victim> <map> <weapon>```')
+        await ctx.send('```Input Error! Map and weapon are optional but both are required if used.\n Correct format: $addkill killer victim map weapon```')
     else:
         # map & weapon are included
         if len(args) > 2:
@@ -349,15 +325,15 @@ async def addkill(ctx, *args):
                 await ctx.send('```{} is not in the records. Try again.```'.format(killer))       
         pass
 
-# format: $deletekill <Id>
+# format: $deletekill Id
 # Output: client side
 @bot.command()
 async def deletekill(ctx, *args):
     
     if len(args) == 0:
-        await ctx.send('```Input error! Please enter a kill Id # to delete. Correct format: $deletekill <Id>```')
+        await ctx.send('```Input error! Please enter a kill Id # to delete. Correct format: $deletekill Id```')
     elif len(args) > 1:
-        await ctx.send('```Input error! Can only delete 1 kill at a time. Correct format: $deletekill <Id>```')
+        await ctx.send('```Input error! Can only delete 1 kill at a time. Correct format: $deletekill Id```')
     else:
         delID = str(args[0])
         srchQry = """
@@ -418,7 +394,7 @@ async def deletekill(ctx, *args):
 async def deleteplayer(ctx, *args):
     
     if len(args) == 0:
-        await ctx.send('```Input error! Please enter a name. Correct format: $deleteplayer <Name>```')
+        await ctx.send('```Input error! Please enter a name. Correct format: $deleteplayer playerName```')
     elif len(args) > 1:
         await ctx.send('```Input error! Can only delete one player at a time```')
     else:
@@ -444,7 +420,7 @@ async def deleteplayer(ctx, *args):
 # format: $showkills
 # Grabs all data from teamkills Table & outputs to discord
 # Output: client side
-@bot.command()
+@bot.command(name='showkills', aliases=['kills', 'sk'])
 async def showkills(ctx):
     
     qry = """
@@ -472,7 +448,7 @@ async def showkills(ctx):
 # format: $showplayers
 # Grabs all data from players Table & outputs to discord
 # Output: client side
-@bot.command()
+@bot.command(name='showplayers', aliases=['players', 'sp'])
 async def showplayers(ctx):
     
     qry = """
@@ -492,43 +468,11 @@ async def showplayers(ctx):
     await ctx.send(s)
 
 
-# Help command to describe what each ratBot's function's do
-# Correct format: $help or $help <command> for a more info about command
-# Output: Client side
-@bot.command()
-async def help(ctx, *args):
-
-    if len(args) < 1:
-        s = """```Commands:
-        addplayer       - adds a new player to the records
-        getplayer       - gets a player's statistics
-        deleteplayer    - deletes a player from the records
-        addkill         - adds a kill to the records
-        deletekill      - deletes a kill from the records
-        showkills       - shows all the kills
-        showplayers     - shows all the players & their statistics
-        leaderboard     - ranks the players by most team kills
-        help            - show this message
-
-        Type $help <command> for more info on a command.```
-        """
-        await ctx.send(s)
-    elif len(args) == 1:
-        # use ``` Before & after sentence to format into code block on discord
-        s = "```"
-        s += findFunc(args[0])
-        s += "```"
-        await ctx.send(s)
-    else:
-        await ctx.send("```Input Error! Correct format: $help <command>\t\tThe command is optional\n```")
-
-
 # Shows a leaderboard that ranks players by most team kills
 # Output: client side
-@bot.command()
+@bot.command(name='leaderboard', aliases=['lb'])
 async def leaderboard(ctx):
     
-    print('leaderboard')
     sql = "SELECT * FROM players ORDER BY num_teamkills DESC"
     db_cursor.execute(sql)
     res = db_cursor.fetchall()
@@ -545,6 +489,37 @@ async def leaderboard(ctx):
             z += 1
         s += "```"
         await ctx.send(s)
+
+
+# Help command to describe what each ratBot's function's do
+# Correct format: $help or $help command for a more info about command
+# Output: Client side
+@bot.command()
+async def help(ctx, *args):
+
+    if len(args) < 1:
+        s = """```Commands:
+        addplayer       - adds a new player to the records
+        getplayer       - gets a player's statistics
+        deleteplayer    - deletes a player from the records
+        addkill         - adds a kill to the records
+        deletekill      - deletes a kill from the records
+        showkills       - shows all the kills
+        showplayers     - shows all the players & their statistics
+        leaderboard     - ranks the players by most team kills
+        help            - show this message
+
+        Type $help command for more info on a command.```
+        """
+        await ctx.send(s)
+    elif len(args) == 1:
+        # use ``` Before & after sentence to format into code block on discord
+        s = "```"
+        s += findFunc(args[0])
+        s += "```"
+        await ctx.send(s)
+    else:
+        await ctx.send("```Input Error! Correct format: $help command\t\tThe command is optional\n```")
 
 
 # Testing purposes - prints info about databases & tables
@@ -571,7 +546,7 @@ db_cursor.execute("DESCRIBE players")
 results = db_cursor.fetchall()
 for row in results:
     print(row)
-'''
+
 
 # Testing purposes - Delete both tables in rat_stats database
 # Output: server side
@@ -586,6 +561,8 @@ async def deleteTables(ctx):
     db.close()
     print('Delete sucessful!')
     exit(0)
+'''
+
 
 # task to ping server to keep pipe to database from breaking (timeout = 10min)
 @tasks.loop(minutes=9)
