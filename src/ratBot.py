@@ -102,22 +102,6 @@ def getCount():
     #x = len(results)
     x = db_cursor.fetchall()
     return len(x)
-    
-
-# helper function to reconnect to database & create new cursor
-def reconnection():
-    try:
-        db = connect(
-            host=dbHost,
-            user=userName,
-            password=pw,
-            database=dbName
-        )
-        db_cursor = db.cursor(buffered=True)
-    except Error as e:
-        log.error(e)
-        # print to servers bot is going offline for maintenance
-        #add system exit to kill bot 
 
 
 # helper function to generate a random 5-digit ID # for an inserted kill
